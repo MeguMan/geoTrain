@@ -1,14 +1,16 @@
-package redis_implementation
+package memcache
 
 import (
+	"fmt"
 	"time"
 )
 
-func (c *LRU) Set(key string, value interface{}, expiration int64) bool {
+func (c *LRU) Set(key string, value interface{}, expiration int64) {
 	if element, exists := c.items[key]; exists == true {
+		fmt.Println("EXISTS")
 		c.queue.MoveToFront(element)
 		element.Value.(*Item).Value = value
-		return true
+		return
 	}
 
 	if c.queue.Len() == c.capacity {
@@ -21,12 +23,16 @@ func (c *LRU) Set(key string, value interface{}, expiration int64) bool {
 
 	item := NewItem(key, value, expiration)
 
+	quit := make(chan bool)
 	go func() {
-		for now := range time.Tick(time.Second) {
-			c.mutex.Lock()
-			for k, _ := range c.items {
-				if now.Unix() > item.TTL {
-					delete(c.items, k)
+		for _ = range time.Tick(time.Second) {
+			select {
+			case <- quit:
+				return
+			default:
+				if item.expired() {
+					delete(c.items, item.Key)
+					quit <- true
 				}
 			}
 		}
@@ -34,8 +40,6 @@ func (c *LRU) Set(key string, value interface{}, expiration int64) bool {
 
 	element := c.queue.PushFront(item)
 	c.items[item.Key] = element
-
-	return true
 }
 
 func (c *LRU) Get(key string) interface{} {

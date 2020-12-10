@@ -1,4 +1,4 @@
-package redis_implementation
+package memcache
 
 import (
 	"container/list"
@@ -42,12 +42,9 @@ func (c *LRU) purge() {
 	}
 }
 
-func (i *Item) expired() bool{
-	if i.TTL == 0 {
+func (i Item) expired() bool {
+	if i.TTL == int64(0) {
 		return false
 	}
 	return time.Now().Unix() > i.TTL
 }
-
-
-
