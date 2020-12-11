@@ -2,7 +2,6 @@ package memcache
 
 import (
 	"container/list"
-	"sync"
 	"time"
 )
 
@@ -16,7 +15,6 @@ type LRU struct {
 	capacity int
 	items    map[string]*list.Element
 	queue    *list.List
-	mutex    sync.Mutex
 }
 
 func NewLru(capacity int) *LRU {
