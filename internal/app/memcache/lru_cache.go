@@ -15,13 +15,15 @@ type LRU struct {
 	capacity int
 	items    map[string]*list.Element
 	queue    *list.List
+	password string
 }
 
-func NewLru(capacity int) *LRU {
+func NewLru(config *Config) *LRU {
 	return &LRU{
-		capacity: capacity,
+		capacity: config.Capacity,
 		items:    make(map[string]*list.Element),
 		queue:    list.New(),
+		password: config.Password,
 	}
 }
 

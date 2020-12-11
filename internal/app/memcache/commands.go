@@ -67,3 +67,10 @@ func (c *LRU) Save() {
 
 	file.WriteString(data)
 }
+
+func (c *LRU) CheckPassword(password string) bool {
+	if c.password == password {
+		return true
+	}
+	return false
+}
