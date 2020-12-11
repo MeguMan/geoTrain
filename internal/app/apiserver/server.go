@@ -32,6 +32,7 @@ func (s *server) configureRouter() {
 	s.router.HandleFunc("/rows/{key}", s.GetValueByKey()).Methods("GET")
 	s.router.HandleFunc("/rows", s.CreateRow()).Methods("POST")
 	s.router.HandleFunc("/rows/{key}", s.DeleteRow()).Methods("DELETE")
+	s.router.HandleFunc("/save", s.SaveCache()).Methods("GET")
 }
 
 func (s *server) Login() func(http.ResponseWriter, *http.Request) {
@@ -74,5 +75,14 @@ func (s *server) DeleteRow() func(http.ResponseWriter, *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "DELETED")
+	}
+}
+
+func (s *server) SaveCache() func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		s.cache.Save()
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "Saved")
 	}
 }

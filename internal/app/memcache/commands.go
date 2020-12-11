@@ -2,6 +2,7 @@ package memcache
 
 import (
 	"fmt"
+	"os"
 	"time"
 )
 
@@ -50,4 +51,19 @@ func (c *LRU) Get(key string) interface{} {
 	c.queue.MoveToFront(element)
 
 	return element.Value.(*Item).Value
+}
+
+func (c *LRU) Save() {
+	var data string
+	for k, v := range c.items {
+		data += fmt.Sprintf("%s - %s \n", k, v.Value.(*Item).Value)
+	}
+
+	file, err := os.Create("data.txt")
+	if err != nil{
+		fmt.Println("Unable to create file:", err)
+	}
+	defer file.Close()
+
+	file.WriteString(data)
 }
