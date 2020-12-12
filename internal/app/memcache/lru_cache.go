@@ -7,7 +7,7 @@ import (
 
 type Item struct {
 	Key   string
-	Value interface{}
+	Value string
 	TTL   int64
 }
 
@@ -27,7 +27,7 @@ func NewLru(config *Config) *LRU {
 	}
 }
 
-func NewItem(key string, value interface{}, expiration int64) *Item {
+func NewItem(key string, value string, expiration int64) *Item {
 	return &Item{
 		Key:   key,
 		Value: value,

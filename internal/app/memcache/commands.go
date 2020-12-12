@@ -11,9 +11,8 @@ var (
 	errNotFound = errors.New("row with this key now wasn't found")
 )
 
-func (c *LRU) Set(key string, value interface{}, expiration int64) {
+func (c *LRU) Set(key string, value string, expiration int64) {
 	if element, exists := c.items[key]; exists == true {
-		fmt.Println("EXISTS")
 		c.queue.MoveToFront(element)
 		element.Value.(*Item).Value = value
 		return
@@ -48,14 +47,22 @@ func (c *LRU) Set(key string, value interface{}, expiration int64) {
 	c.items[item.Key] = element
 }
 
-func (c *LRU) Get(key string) (interface{}, error) {
+func (c *LRU) Get(key string) (string, error) {
 	element, exists := c.items[key]
 	if exists == false {
-		return nil, errNotFound
+		return "", errNotFound
 	}
 	c.queue.MoveToFront(element)
 
 	return element.Value.(*Item).Value, nil
+}
+
+func (c *LRU) GetAllKeys() []string {
+	var keys []string
+	for k, _ := range c.items {
+		keys = append(keys, k)
+	}
+	return keys
 }
 
 func (c *LRU) Save() error{

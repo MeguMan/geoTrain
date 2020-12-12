@@ -1,6 +1,7 @@
 package apiserver
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/MeguMan/geoTrain/internal/app/memcache"
@@ -35,6 +36,7 @@ func NewServer(cache *memcache.LRU, sessionStore sessions.Store) *server {
 func (s *server) configureRouter() {
 	s.router.HandleFunc("/login", s.SessionsCreate()).Methods("GET")
 	s.router.HandleFunc("/save", s.SaveCache()).Methods("GET")
+	s.router.HandleFunc("/keys", s.GetAllKeys()).Methods("GET")
 
 	private := s.router.PathPrefix("/rows").Subrouter()
 	private.Use(s.authenticateUser)
@@ -96,9 +98,31 @@ func (s *server) GetValueByKey() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "Got ", value)
+		fmt.Fprint(w, value)
 	}
 }
+
+func (s *server) GetAllKeys() func(http.ResponseWriter, *http.Request) {
+	type Response struct{
+		Keys []string `json:"Keys"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		resp := Response{s.cache.GetAllKeys()}
+		if resp.Keys == nil {
+			fmt.Fprint(w, "There is no keys in cache recently")
+			return
+		}
+		jsResp, err := json.Marshal(resp)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write(jsResp)
+	}
+}
+
 
 func (s *server) CreateRow() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
