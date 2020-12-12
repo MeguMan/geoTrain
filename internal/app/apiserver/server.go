@@ -33,14 +33,36 @@ func NewServer(cache *memcache.LRU, sessionStore sessions.Store) *server {
 }
 
 func (s *server) configureRouter() {
-	s.router.HandleFunc("/login", s.HandleSessionsCreate()).Methods("GET")
-	s.router.HandleFunc("/rows/{key}", s.GetValueByKey()).Methods("GET")
-	s.router.HandleFunc("/rows", s.CreateRow()).Methods("POST")
-	s.router.HandleFunc("/rows/{key}", s.DeleteRow()).Methods("DELETE")
+	s.router.HandleFunc("/login", s.SessionsCreate()).Methods("GET")
 	s.router.HandleFunc("/save", s.SaveCache()).Methods("GET")
+
+	private := s.router.PathPrefix("/rows").Subrouter()
+	private.Use(s.authenticateUser)
+	private.HandleFunc("/{key}", s.GetValueByKey()).Methods("GET")
+	private.HandleFunc("", s.CreateRow()).Methods("POST")
+	private.HandleFunc("/{key}", s.DeleteRow()).Methods("DELETE")
 }
 
-func (s *server) HandleSessionsCreate() func(http.ResponseWriter, *http.Request) {
+func (s *server) authenticateUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		session, err := s.sessionStore.Get(r, sessionName)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		_, ok := session.Values["status"]
+		if !ok {
+			w.WriteHeader(http.StatusUnauthorized)
+			fmt.Fprint(w, "Not authenticated")
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (s *server) SessionsCreate() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		password := r.URL.Query().Get("password")
@@ -59,7 +81,7 @@ func (s *server) HandleSessionsCreate() func(http.ResponseWriter, *http.Request)
 			return
 		}
 
-		session.Values["shit"] = "suka"
+		session.Values["status"] = "authorized"
 		if err := s.sessionStore.Save(r, w, session); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
