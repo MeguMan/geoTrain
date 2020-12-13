@@ -41,6 +41,8 @@ func (s *server) configureRouter() {
 	private := s.router.PathPrefix("/rows").Subrouter()
 	private.Use(s.authenticateUser)
 	private.HandleFunc("/{key}", s.GetValueByKey()).Methods("GET")
+	private.HandleFunc("/hash/{key}", s.GetHashValueByKey()).Methods("GET")
+	private.HandleFunc("/hash", s.CreateRow()).Methods("POST")
 	private.HandleFunc("", s.CreateRow()).Methods("POST")
 	private.HandleFunc("/{key}", s.DeleteRow()).Methods("DELETE")
 }
@@ -102,6 +104,21 @@ func (s *server) GetValueByKey() func(http.ResponseWriter, *http.Request) {
 	}
 }
 
+func (s *server) GetHashValueByKey() func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		vars := mux.Vars(r)
+		key := vars["key"]
+		value, err := s.cache.Get(key)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, value)
+	}
+}
+
 func (s *server) GetAllKeys() func(http.ResponseWriter, *http.Request) {
 	type Response struct{
 		Keys []string `json:"Keys"`
@@ -125,6 +142,27 @@ func (s *server) GetAllKeys() func(http.ResponseWriter, *http.Request) {
 
 
 func (s *server) CreateRow() func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		key := r.URL.Query().Get("key")
+		if key == "" {
+			err :=  errors.New("parameter key is empty")
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		value := r.URL.Query().Get("value")
+		if value == "" {
+			err :=  errors.New("parameter value is empty")
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		expiration, _ := strconv.ParseInt(r.URL.Query().Get("ttl"), 10, 64)
+		s.cache.Set(key, value, expiration)
+		w.WriteHeader(http.StatusCreated)
+	}
+}
+
+func (s *server) CreateHashRow() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		key := r.URL.Query().Get("key")

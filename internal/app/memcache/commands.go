@@ -47,7 +47,43 @@ func (c *LRU) Set(key string, value string, expiration int64) {
 	c.items[item.Key] = element
 }
 
-func (c *LRU) Get(key string) (string, error) {
+func (c *LRU) Hset(key string, value interface{}, expiration int64) {
+	if element, exists := c.items[key]; exists == true {
+		c.queue.MoveToFront(element)
+		element.Value.(*Item).Value = value
+		return
+	}
+
+	if c.queue.Len() == c.capacity {
+		c.purge()
+	}
+
+	if expiration != 0 {
+		expiration += time.Now().Unix()
+	}
+
+	item := NewItem(key, value, expiration)
+
+	quit := make(chan bool)
+	go func() {
+		for _ = range time.Tick(time.Second) {
+			select {
+			case <- quit:
+				return
+			default:
+				if item.expired() {
+					delete(c.items, item.Key)
+					quit <- true
+				}
+			}
+		}
+	}()
+
+	element := c.queue.PushFront(item)
+	c.items[item.Key] = element
+}
+
+func (c *LRU) Get(key string) (interface{}, error) {
 	element, exists := c.items[key]
 	if exists == false {
 		return "", errNotFound
