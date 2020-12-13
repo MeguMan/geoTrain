@@ -10,11 +10,13 @@ value=supersecretpassword(пароль можно изменить в configs/co
    
     http://localhost:8080/login?password=supersecretpassword
 #### /save GET
-Сохранит в файл data.txt все имеющиеся данные. Пример
-текстового файла:
+Сохранит в файл data.txt все имеющиеся данные. Чтобы просмотреть файл, можно
+написать следующую команду в docker-cli
 
-    verygoodkey - verygoodvalue 
-    verygoodkey1 - verygoodvalue1 
+    # cat data.txt
+    verygoodkey55 - verygoodvalue110
+    verygoodkey555 - verygoodvalue110
+    verygoodkey5 - verygoodvalue110
 #### /keys GET
 Позволяет получить все существующие ключи
 
