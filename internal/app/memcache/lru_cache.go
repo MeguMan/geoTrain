@@ -2,7 +2,6 @@ package memcache
 
 import (
 	"container/list"
-	"time"
 )
 
 type Item struct {
@@ -42,9 +41,3 @@ func (c *LRU) purge() {
 	}
 }
 
-func (i Item) expired() bool {
-	if i.TTL == int64(0) {
-		return false
-	}
-	return time.Now().Unix() > i.TTL
-}

@@ -8,13 +8,21 @@ import (
 )
 
 var (
-	errNotFound = errors.New("row with this key now wasn't found")
+	errNotFound = errors.New("row with this key wasn't found")
 )
 
 func (c *LRU) Set(key string, value string, expiration int64) {
 	if element, exists := c.items[key]; exists == true {
+		item := element.Value.(*Item)
 		c.queue.MoveToFront(element)
-		element.Value.(*Item).Value = value
+		item.Value = value
+
+		if expiration != 0 {
+			expiration += time.Now().Unix()
+			item.TTL = expiration
+			go c.deleteAfterExpiration(item)
+			return
+		}
 		return
 	}
 
@@ -24,27 +32,15 @@ func (c *LRU) Set(key string, value string, expiration int64) {
 
 	if expiration != 0 {
 		expiration += time.Now().Unix()
+		item := NewItem(key, value, expiration)
+		go c.deleteAfterExpiration(item)
+		element := c.queue.PushFront(item)
+		c.items[item.Key] = element
+	} else {
+		item := NewItem(key, value, expiration)
+		element := c.queue.PushFront(item)
+		c.items[item.Key] = element
 	}
-
-	item := NewItem(key, value, expiration)
-
-	quit := make(chan bool)
-	go func() {
-		for _ = range time.Tick(time.Second) {
-			select {
-			case <- quit:
-				return
-			default:
-				if item.expired() {
-					delete(c.items, item.Key)
-					quit <- true
-				}
-			}
-		}
-	}()
-
-	element := c.queue.PushFront(item)
-	c.items[item.Key] = element
 }
 
 func (c *LRU) Hset(key string, value interface{}, expiration int64) {
@@ -63,21 +59,7 @@ func (c *LRU) Hset(key string, value interface{}, expiration int64) {
 	}
 
 	item := NewItem(key, value, expiration)
-
-	quit := make(chan bool)
-	go func() {
-		for _ = range time.Tick(time.Second) {
-			select {
-			case <- quit:
-				return
-			default:
-				if item.expired() {
-					delete(c.items, item.Key)
-					quit <- true
-				}
-			}
-		}
-	}()
+	go c.deleteAfterExpiration(item)
 
 	element := c.queue.PushFront(item)
 	c.items[item.Key] = element
@@ -86,7 +68,7 @@ func (c *LRU) Hset(key string, value interface{}, expiration int64) {
 func (c *LRU) Get(key string) (interface{}, error) {
 	element, exists := c.items[key]
 	if exists == false {
-		return "", errNotFound
+		return nil, errNotFound
 	}
 	c.queue.MoveToFront(element)
 
@@ -133,4 +115,19 @@ func (c *LRU) CheckPassword(password string) bool {
 		return true
 	}
 	return false
+}
+
+func (c *LRU) deleteAfterExpiration(item *Item) {
+	quit := make(chan bool)
+	for _ = range time.Tick(time.Second) {
+		select {
+		case <- quit:
+			return
+		default:
+			if time.Now().Unix() > item.TTL {
+				delete(c.items, item.Key)
+				quit <- true
+			}
+		}
+	}
 }
