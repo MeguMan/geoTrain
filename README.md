@@ -1,7 +1,7 @@
-##Тестовое задание на позицию стажера backend в юнит Geo
-###Quick start:
+## Тестовое задание на позицию стажера backend в юнит Geo
+### Quick start:
     docker-compose up   
-###API methods:  
+### API methods:  
 #### /login GET
 Для авторизации необходимо передать Query параметр, где key=password, а
 value=supersecretpassword(пароль можно изменить в configs/config.json).
