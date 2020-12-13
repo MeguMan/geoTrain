@@ -38,11 +38,11 @@ value=supersecretpassword(пароль можно изменить в configs/co
 
     http://localhost:8080/rows/verygoodkey2
     
-####/hash POST
+#### /hash POST
 Создает новую строку, в качестве значения который хэш-таблица
 
     http://localhost:8080/rows/hash?hash=myhash3&field=myfield2&value=myvalue222
-####/hash/{hashName}/{field} GET
+#### /hash/{hashName}/{field} GET
 Возвращает значение поля в хэш таблице
 
     http://localhost:8080/rows/hash/myhash3/myfield2
