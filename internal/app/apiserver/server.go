@@ -41,8 +41,8 @@ func (s *server) configureRouter() {
 	private := s.router.PathPrefix("/rows").Subrouter()
 	private.Use(s.authenticateUser)
 	private.HandleFunc("/{key}", s.GetValueByKey()).Methods("GET")
-	private.HandleFunc("/hash/{key}", s.GetHashValueByKey()).Methods("GET")
-	private.HandleFunc("/hash", s.CreateRow()).Methods("POST")
+	private.HandleFunc("/hash/{hashName}/{field}", s.GetHashValue()).Methods("GET")
+	private.HandleFunc("/hash", s.CreateHashRow()).Methods("POST")
 	private.HandleFunc("", s.CreateRow()).Methods("POST")
 	private.HandleFunc("/{key}", s.DeleteRow()).Methods("DELETE")
 }
@@ -104,12 +104,13 @@ func (s *server) GetValueByKey() func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func (s *server) GetHashValueByKey() func(http.ResponseWriter, *http.Request) {
+func (s *server) GetHashValue() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		vars := mux.Vars(r)
-		key := vars["key"]
-		value, err := s.cache.Get(key)
+		hash := vars["hashName"]
+		field := vars["field"]
+		value, err := s.cache.HGet(hash, field)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
@@ -121,7 +122,7 @@ func (s *server) GetHashValueByKey() func(http.ResponseWriter, *http.Request) {
 
 func (s *server) GetAllKeys() func(http.ResponseWriter, *http.Request) {
 	type Response struct{
-		Keys []string `json:"Keys"`
+		Keys []string `json:"keys"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -165,9 +166,15 @@ func (s *server) CreateRow() func(http.ResponseWriter, *http.Request) {
 func (s *server) CreateHashRow() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		key := r.URL.Query().Get("key")
-		if key == "" {
-			err :=  errors.New("parameter key is empty")
+		hash := r.URL.Query().Get("hash")
+		if hash == "" {
+			err :=  errors.New("parameter hash is empty")
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		field := r.URL.Query().Get("field")
+		if field == "" {
+			err :=  errors.New("parameter field is empty")
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -177,8 +184,7 @@ func (s *server) CreateHashRow() func(http.ResponseWriter, *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		expiration, _ := strconv.ParseInt(r.URL.Query().Get("ttl"), 10, 64)
-		s.cache.Set(key, value, expiration)
+		s.cache.HSet(hash, field, value)
 		w.WriteHeader(http.StatusCreated)
 	}
 }

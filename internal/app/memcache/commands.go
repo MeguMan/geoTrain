@@ -12,7 +12,7 @@ var (
 )
 
 func (c *LRU) Set(key string, value string, ttl int64) {
-	if element, exists := c.items[key]; exists == true {
+	if element, exists := c.items[key]; exists {
 		item := element.Value.(*Item)
 		c.queue.MoveToFront(element)
 		item.Value = value
@@ -41,18 +41,47 @@ func (c *LRU) Set(key string, value string, ttl int64) {
 	}
 }
 
-func (c *LRU) Hset(key string, value interface{}, expiration int64) {
+func (c *LRU) HSet(hash string, field, value interface{}) {
+	if element, exists := c.items[hash]; exists {
+		element.Value.(*HashItem).Value[field] = value
+		c.queue.MoveToFront(element)
+		return
+	}
 
+	if c.queue.Len() == c.capacity {
+		c.purge()
+	}
+	m := map[interface{}]interface{}{
+		field: value,
+	}
+	item := NewHashItem(hash, m, 0)
+	element := c.queue.PushFront(item)
+	c.items[item.Key] = element
 }
 
 func (c *LRU) Get(key string) (interface{}, error) {
 	element, exists := c.items[key]
-	if exists == false {
+	if !exists {
 		return nil, errNotFound
 	}
 	c.queue.MoveToFront(element)
 
 	return element.Value.(*Item).Value, nil
+}
+
+func (c *LRU) HGet(hash string, field interface{}) (interface{}, error) {
+	element, exists := c.items[hash]
+	if !exists {
+		return nil, errNotFound
+	}
+
+	value, exists := element.Value.(*HashItem).Value[field]
+	if !exists {
+		return nil, errNotFound
+	}
+
+	c.queue.MoveToFront(element)
+	return value, nil
 }
 
 func (c *LRU) GetAllKeys() []string {
@@ -82,7 +111,7 @@ func (c *LRU) Save() error{
 
 func (c *LRU) Delete(key string) error{
 	_, exists := c.items[key]
-	if exists == false {
+	if !exists {
 		return errNotFound
 	}
 

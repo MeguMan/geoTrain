@@ -4,6 +4,12 @@ import (
 	"container/list"
 )
 
+type HashItem struct {
+	Key   string
+	Value map[interface{}] interface{}
+	TTL   int64
+}
+
 type Item struct {
 	Key   string
 	Value interface{}
@@ -28,6 +34,14 @@ func NewLru(config *Config) *LRU {
 
 func NewItem(key string, value interface{}, ttl int64) *Item {
 	return &Item{
+		Key:   key,
+		Value: value,
+		TTL:   ttl,
+	}
+}
+
+func NewHashItem(key string, value map[interface{}] interface{}, ttl int64) *HashItem {
+	return &HashItem{
 		Key:   key,
 		Value: value,
 		TTL:   ttl,
