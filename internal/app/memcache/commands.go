@@ -11,16 +11,16 @@ var (
 	errNotFound = errors.New("row with this key wasn't found")
 )
 
-func (c *LRU) Set(key string, value string, expiration int64) {
+func (c *LRU) Set(key string, value string, ttl int64) {
 	if element, exists := c.items[key]; exists == true {
 		item := element.Value.(*Item)
 		c.queue.MoveToFront(element)
 		item.Value = value
 
-		if expiration != 0 {
-			expiration += time.Now().Unix()
-			item.TTL = expiration
-			go c.deleteAfterExpiration(item)
+		if ttl != 0 {
+			expiration := ttl + time.Now().Unix()
+			item.TTL = ttl
+			go c.deleteAfterExpiration(item, expiration)
 			return
 		}
 		return
@@ -30,39 +30,21 @@ func (c *LRU) Set(key string, value string, expiration int64) {
 		c.purge()
 	}
 
-	if expiration != 0 {
-		expiration += time.Now().Unix()
-		item := NewItem(key, value, expiration)
-		go c.deleteAfterExpiration(item)
+	if ttl != 0 {
+		expiration := ttl + time.Now().Unix()
+		item := NewItem(key, value, ttl)
+		go c.deleteAfterExpiration(item, expiration)
 		element := c.queue.PushFront(item)
 		c.items[item.Key] = element
 	} else {
-		item := NewItem(key, value, expiration)
+		item := NewItem(key, value, ttl)
 		element := c.queue.PushFront(item)
 		c.items[item.Key] = element
 	}
 }
 
 func (c *LRU) Hset(key string, value interface{}, expiration int64) {
-	if element, exists := c.items[key]; exists == true {
-		c.queue.MoveToFront(element)
-		element.Value.(*Item).Value = value
-		return
-	}
 
-	if c.queue.Len() == c.capacity {
-		c.purge()
-	}
-
-	if expiration != 0 {
-		expiration += time.Now().Unix()
-	}
-
-	item := NewItem(key, value, expiration)
-	go c.deleteAfterExpiration(item)
-
-	element := c.queue.PushFront(item)
-	c.items[item.Key] = element
 }
 
 func (c *LRU) Get(key string) (interface{}, error) {
@@ -117,16 +99,18 @@ func (c *LRU) CheckPassword(password string) bool {
 	return false
 }
 
-func (c *LRU) deleteAfterExpiration(item *Item) {
+func (c *LRU) deleteAfterExpiration(item *Item, expiration int64) {
 	quit := make(chan bool)
-	for _ = range time.Tick(time.Second) {
+	for now := range time.Tick(time.Second) {
 		select {
 		case <- quit:
 			return
 		default:
-			if time.Now().Unix() > item.TTL {
+			if now.Unix() > expiration {
 				delete(c.items, item.Key)
 				quit <- true
+			} else {
+				item.TTL -= 1
 			}
 		}
 	}

@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 	"testing"
+	"time"
 )
 
 func TestLRU_Set(t *testing.T) {
@@ -87,5 +88,8 @@ func TestLRU_CheckPassword(t *testing.T) {
 
 func TestLRU_deleteAfterExpiration(t *testing.T) {
 	l := TestLru(t)
-	t.set
+	l.Set("firstKey", "NewValue", 1)
+	time.Sleep(1 * time.Second)
+	val, _ := l.Get("firstKey")
+	assert.Equal(t, nil, val)
 }

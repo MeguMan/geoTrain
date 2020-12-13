@@ -26,11 +26,11 @@ func NewLru(config *Config) *LRU {
 	}
 }
 
-func NewItem(key string, value interface{}, expiration int64) *Item {
+func NewItem(key string, value interface{}, ttl int64) *Item {
 	return &Item{
 		Key:   key,
 		Value: value,
-		TTL:   expiration,
+		TTL:   ttl,
 	}
 }
 
