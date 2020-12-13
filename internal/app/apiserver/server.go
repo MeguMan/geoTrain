@@ -8,7 +8,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"net/http"
-	"runtime"
 	"strconv"
 )
 
@@ -160,7 +159,6 @@ func (s *server) CreateRow() func(http.ResponseWriter, *http.Request) {
 		expiration, _ := strconv.ParseInt(r.URL.Query().Get("ttl"), 10, 64)
 		s.cache.Set(key, value, expiration)
 		w.WriteHeader(http.StatusCreated)
-		fmt.Fprintf(w, strconv.Itoa(runtime.NumGoroutine()))
 	}
 }
 
