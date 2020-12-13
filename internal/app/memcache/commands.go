@@ -18,9 +18,8 @@ func (c *LRU) Set(key string, value string, ttl int64) {
 		item.Value = value
 
 		if ttl != 0 {
-			expiration := ttl + time.Now().Unix()
 			item.TTL = ttl
-			go c.deleteAfterExpiration(item, expiration)
+			go c.deleteAfterExpiration(item)
 			return
 		}
 		return
@@ -31,9 +30,8 @@ func (c *LRU) Set(key string, value string, ttl int64) {
 	}
 
 	if ttl != 0 {
-		expiration := ttl + time.Now().Unix()
 		item := NewItem(key, value, ttl)
-		go c.deleteAfterExpiration(item, expiration)
+		go c.deleteAfterExpiration(item)
 		element := c.queue.PushFront(item)
 		c.items[item.Key] = element
 	} else {
@@ -99,19 +97,13 @@ func (c *LRU) CheckPassword(password string) bool {
 	return false
 }
 
-func (c *LRU) deleteAfterExpiration(item *Item, expiration int64) {
-	quit := make(chan bool)
-	for now := range time.Tick(time.Second) {
-		select {
-		case <- quit:
-			return
-		default:
-			if now.Unix() > expiration {
-				delete(c.items, item.Key)
-				quit <- true
-			} else {
-				item.TTL -= 1
-			}
+func (c *LRU) deleteAfterExpiration(item *Item) {
+	for _ = range time.Tick(time.Second) {
+		if item.TTL == 0 {
+			delete(c.items, item.Key)
+			break
+		} else {
+			item.TTL -= 1
 		}
 	}
 }
