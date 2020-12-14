@@ -157,8 +157,13 @@ func (s *server) CreateRow() func(http.ResponseWriter, *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		expiration, _ := strconv.ParseInt(r.URL.Query().Get("ttl"), 10, 64)
-		s.cache.Set(key, value, expiration)
+		ttl, _ := strconv.ParseInt(r.URL.Query().Get("ttl"), 10, 64)
+		if ttl < 0 {
+			err := errors.New("invalid ttl in set")
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		s.cache.Set(key, value, ttl)
 		w.WriteHeader(http.StatusCreated)
 	}
 }
@@ -184,7 +189,11 @@ func (s *server) CreateHashRow() func(http.ResponseWriter, *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		s.cache.HSet(hash, field, value)
+		err := s.cache.HSet(hash, field, value)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		w.WriteHeader(http.StatusCreated)
 	}
 }
