@@ -21,8 +21,32 @@ func TestLRU_Set(t *testing.T) {
 	assert.Equal(t, nil, newVal)
 }
 
-func TestLRU_Hset(t *testing.T) {
+func TestLRU_HSet(t *testing.T) {
+	l := TestLru(t)
+	l.HSet("myHash", "myField", "myValue")
+	newVal, _ := l.HGet("myHash", "myField")
+	assert.Equal(t, "myValue", newVal)
+	assert.Equal(t, l.queue.Front(), l.items["myHash"])
 
+	for i:= 0; i < l.capacity; i++ {
+		l.HSet("hash"+strconv.Itoa(i), "field", "value")
+	}
+
+	newVal, _ = l.HGet("myHash", "myField")
+	assert.Equal(t, nil, newVal)
+}
+
+func TestLRU_HGet(t *testing.T) {
+	l := TestLru(t)
+	val, err := l.HGet("testHash", "testField")
+	assert.NoError(t, err)
+	assert.NotNil(t, val)
+	val, err = l.HGet("nonexistentHash", "testField")
+	assert.Error(t, err)
+	assert.Nil(t, val)
+	val, err = l.HGet("testHash", "nonexistentGield")
+	assert.Error(t, err)
+	assert.Nil(t, val)
 }
 
 func TestLRU_Get(t *testing.T) {
@@ -30,14 +54,16 @@ func TestLRU_Get(t *testing.T) {
 	val, err := l.Get("firstKey")
 	assert.NoError(t, err)
 	assert.NotNil(t, val)
-	val1, err1 := l.Get("nonexistentKey")
-	assert.Error(t, err1)
-	assert.Nil(t, val1)
+	val, err = l.Get("nonexistentKey")
+	assert.Error(t, err)
+	assert.Nil(t, val)
 }
 
-func TestLRU_GetAllKeys(t *testing.T) {
+func TestLRU_GetKeys(t *testing.T) {
 	l := TestLru(t)
-	assert.Equal(t, []string{"firstKey"}, l.GetAllKeys())
+	assert.Equal(t, []string{"firstKey"}, l.GetKeys("*"))
+	assert.Equal(t, []string{"firstKey"}, l.GetKeys("firs[st]Key"))
+	assert.Equal(t, []string{"firstKey"}, l.GetKeys("f[h-j]rstKey"))
 }
 
 func TestLRU_Save(t *testing.T) {
@@ -90,7 +116,7 @@ func TestLRU_deleteAfterExpiration(t *testing.T) {
 	item := &Item{
 		Key:   "newKey",
 		Value: "Value",
-		TTL:   2,
+		TTL:   1,
 	}
 	element := l.queue.PushFront(item)
 	l.items[item.Key] = element

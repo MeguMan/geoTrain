@@ -2,12 +2,12 @@ package memcache
 
 import (
 	"container/list"
+	"reflect"
 )
 
 type HashItem struct {
 	Key   string
 	Value map[interface{}] interface{}
-	TTL   int64
 }
 
 type Item struct {
@@ -40,18 +40,22 @@ func NewItem(key string, value interface{}, ttl int64) *Item {
 	}
 }
 
-func NewHashItem(key string, value map[interface{}] interface{}, ttl int64) *HashItem {
+func NewHashItem(key string, value map[interface{}] interface{}) *HashItem {
 	return &HashItem{
 		Key:   key,
 		Value: value,
-		TTL:   ttl,
 	}
 }
 
 func (l *LRU) purge() {
 	if element := l.queue.Back(); element != nil {
-		item := l.queue.Remove(element).(*Item)
-		delete(l.items, item.Key)
+		if reflect.TypeOf(element.Value) != reflect.TypeOf(new(Item)) {
+			item := l.queue.Remove(element).(*HashItem)
+			delete(l.items, item.Key)
+		} else {
+			item := l.queue.Remove(element).(*Item)
+			delete(l.items, item.Key)
+		}
 	}
 }
 

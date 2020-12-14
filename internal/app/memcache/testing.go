@@ -18,7 +18,15 @@ func TestLru(t *testing.T) *LRU {
 		Value: "ItemsValue",
 		TTL:   0,
 	}
+	hItem := &HashItem{
+		Key:   "testHash",
+		Value: map[interface{}]interface{}{
+			"testField": "testValue",
+		},
+	}
 	element := l.queue.PushFront(item)
 	l.items[item.Key] = element
+	element2 := l.queue.PushFront(hItem)
+	l.items[hItem.Key] = element2
 	return &l
 }

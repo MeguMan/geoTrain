@@ -70,7 +70,7 @@ func (l *LRU) HSet(hash string, field, value interface{}) error{
 	m := map[interface{}]interface{}{
 		field: value,
 	}
-	item := NewHashItem(hash, m, 0)
+	item := NewHashItem(hash, m)
 	element := l.queue.PushFront(item)
 	l.items[item.Key] = element
 	return nil
