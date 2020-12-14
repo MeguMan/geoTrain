@@ -48,10 +48,10 @@ func NewHashItem(key string, value map[interface{}] interface{}, ttl int64) *Has
 	}
 }
 
-func (c *LRU) purge() {
-	if element := c.queue.Back(); element != nil {
-		item := c.queue.Remove(element).(*Item)
-		delete(c.items, item.Key)
+func (l *LRU) purge() {
+	if element := l.queue.Back(); element != nil {
+		item := l.queue.Remove(element).(*Item)
+		delete(l.items, item.Key)
 	}
 }
 
