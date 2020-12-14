@@ -57,3 +57,12 @@ value=supersecretpassword(пароль можно изменить в configs/co
     verygoodkey555 - verygoodvalue110
     verygoodkey5 - verygoodvalue110
     
+### Результаты нагрузочного тестирования в Apache JMeter (Thread Group.jmx)
+В течении 60 секунд, 100 тредов выполняют 2 POST и 2 GET запроса по 20 раз
+
+#### Thread properties
+![alt text](https://i.imgur.com/eN5SuXe.png)
+#### Graph Results
+![alt text](https://i.imgur.com/7rCJWok.png)
+#### Summary Report
+![alt text](https://i.imgur.com/G3VC6c7.png)
