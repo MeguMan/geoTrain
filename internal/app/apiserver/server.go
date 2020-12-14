@@ -124,13 +124,16 @@ func (s *server) GetAllKeys() func(http.ResponseWriter, *http.Request) {
 	type Response struct{
 		Keys []string `json:"keys"`
 	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		resp := Response{s.cache.GetAllKeys()}
-		if resp.Keys == nil {
-			fmt.Fprint(w, "There is no keys in cache recently")
+		pattern := r.URL.Query().Get("pattern")
+		if pattern == "" {
+			err :=  errors.New("parameter pattern is empty")
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+		resp := Response{s.cache.GetKeys(pattern)}
 		jsResp, err := json.Marshal(resp)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

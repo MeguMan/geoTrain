@@ -9,30 +9,13 @@ value=supersecretpassword(пароль можно изменить в configs/co
 доступ к остальным запросам
    
     http://localhost:8080/login?password=supersecretpassword
-#### /save GET
-Сохранит в файл data.txt все имеющиеся данные. Чтобы просмотреть файл, можно
-написать следующую команду в docker-cli
-
-    # cat data.txt
-    verygoodkey55 - verygoodvalue110
-    verygoodkey555 - verygoodvalue110
-    verygoodkey5 - verygoodvalue110
-#### /keys GET
-Позволяет получить все существующие ключи
-
-    {
-        "Keys": [
-            "verygoodkey2",
-            "verygoodkey5",
-            "verygoodkey55"
-        ]
-    }
     
 #### /rows POST
 Создает новую строку с ключом, значением и временем жизни.Для бессмертия,
 задайте ttl=0
 
     http://localhost:8080/rows?key=verygoodkey55&value=verygoodvalue110&ttl=10
+
 #### /rows/{key} GET
 Возвращает значение по ключу
 
@@ -42,11 +25,35 @@ value=supersecretpassword(пароль можно изменить в configs/co
 Создает новую строку, в качестве значения который хэш-таблица
 
     http://localhost:8080/rows/hash?hash=myhash3&field=myfield2&value=myvalue222
+
 #### /hash/{hashName}/{field} GET
 Возвращает значение поля в хэш таблице
 
     http://localhost:8080/rows/hash/myhash3/myfield2
+
+#### /keys GET
+Позволяет получить все существующие ключи
+
+    http://localhost:8080/keys?pattern=*
+    
+Поддерживаемые паттерны:
++ ul  h?llo matches hello, hallo and hxllo
++ h*llo matches hllo and heeeello
++ h[ae]llo matches hello and hallo, but not hillo
++ h[^e]llo matches hallo, hbllo, ... but not hello
++ h[a-b]llo matches hallo and hbllo
+
 #### /rows/{key} DELETE
 Удаляет по ключу
 
     http://localhost:8080/rows/verygoodkey2
+
+#### /save GET
+Сохранит в файл data.txt все имеющиеся данные. Чтобы просмотреть файл, можно
+написать следующую команду в docker-cli
+
+    # cat data.txt
+    verygoodkey55 - verygoodvalue110
+    verygoodkey555 - verygoodvalue110
+    verygoodkey5 - verygoodvalue110
+    

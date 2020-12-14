@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -104,11 +106,24 @@ func (l *LRU) HGet(hash string, field interface{}) (interface{}, error) {
 	return value, nil
 }
 
-func (l *LRU) GetAllKeys() []string {
+func (l *LRU) GetKeys(pattern string) []string {
 	var keys []string
-	for k, _ := range l.items {
-		keys = append(keys, k)
+	if strings.Contains(pattern, "?") {
+		pattern = strings.Replace(pattern, "?", ".{1}", -1)
 	}
+
+	if strings.Contains(pattern, "*") {
+		pattern = strings.Replace(pattern, "*", ".*", -1)
+	}
+
+	for k, _ := range l.items {
+		a := regexp.MustCompile(pattern)
+		res := a.Find([]byte(k))
+		if string(res) == k {
+			keys = append(keys, k)
+		}
+	}
+
 	return keys
 }
 
