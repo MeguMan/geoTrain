@@ -11,7 +11,7 @@ func TestLru(t *testing.T) *LRU {
 		capacity: 3,
 		items: make(map[string]*list.Element),
 		queue:    list.New(),
-		password: "strongpassword",
+		password: "supersecretpassword",
 	}
 	item := &Item{
 		Key:   "firstKey",

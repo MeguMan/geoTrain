@@ -61,8 +61,8 @@ func TestLRU_Get(t *testing.T) {
 
 func TestLRU_GetKeys(t *testing.T) {
 	l := TestLru(t)
-	assert.Equal(t, []string{"firstKey"}, l.GetKeys("*"))
-	assert.Equal(t, []string{"firstKey"}, l.GetKeys("firs[st]Key"))
+	assert.Equal(t, []string{"firstKey", "testHash"}, l.GetKeys("*"))
+	assert.Equal(t, []string{"firstKey"}, l.GetKeys("firs[bt]Key"))
 	assert.Equal(t, []string{"firstKey"}, l.GetKeys("f[h-j]rstKey"))
 }
 
@@ -89,7 +89,7 @@ func TestLRU_CheckPassword(t *testing.T) {
 		{
 			name: "valid password",
 			l: TestLru(t),
-			password: "strongpassword",
+			password: "supersecretpassword",
 			isValid: true,
 		},
 		{

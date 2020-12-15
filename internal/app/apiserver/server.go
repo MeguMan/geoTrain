@@ -36,7 +36,7 @@ func NewServer(cache *memcache.LRU, sessionStore sessions.Store) *server {
 func (s *server) configureRouter() {
 	s.router.HandleFunc("/login", s.SessionsCreate()).Methods("GET")
 	s.router.HandleFunc("/save", s.SaveCache()).Methods("GET")
-	s.router.HandleFunc("/keys", s.GetAllKeys()).Methods("GET")
+	s.router.HandleFunc("/keys", s.GetKeys()).Methods("GET")
 
 	private := s.router.PathPrefix("/rows").Subrouter()
 	private.Use(s.authenticateUser)
@@ -120,7 +120,7 @@ func (s *server) GetHashValue() func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func (s *server) GetAllKeys() func(http.ResponseWriter, *http.Request) {
+func (s *server) GetKeys() func(http.ResponseWriter, *http.Request) {
 	type Response struct{
 		Keys []string `json:"keys"`
 	}
